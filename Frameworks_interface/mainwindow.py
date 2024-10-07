@@ -68,6 +68,7 @@ from ClusteringMethods.ClasteringAlgorithms import (
     ConcreteStrategyCURE,
     ConcreteStrategyROCK,
 )
+from ClusteringMethods import WaveCluster
 from AnalysisMethods.AnalysisAlgorithms import DunnIndex, DunnIndexMean, DBi, converter_to_c
 
 import qstylizer.parser     # pip install qstylizer
@@ -114,7 +115,8 @@ DEFAULT_VALUE_TW3 = ['',  # used
                      '',  # ccore
                      str(5),  # n_represent_points
                      str(0.5),  # compression
-                     str(2.0)  # eps
+                     str(2.0),  # eps
+                     str(50)    # scale
                      ]
 switch_tootip_tw2_fr1 = [
     f"Количество точек [uint, (default: {DEFAULT_VALUE[0]})]",
@@ -701,7 +703,7 @@ class MainWindow(QMainWindow):
                                       0, 0, 1, 2, Qt.AlignmentFlag.AlignLeft)
                 gl1_fr3.addWidget(QLabel("Выберите алгоритмы кластеризации: ", objectName='lb1_fr3'),
                                   0, 0, 1, 2, Qt.AlignmentFlag.AlignLeft)
-                tw3_fr3 = QTableWidget(visible=True, objectName='tw3_fr3', columnCount=4, rowCount=15,
+                tw3_fr3 = QTableWidget(visible=True, objectName='tw3_fr3', columnCount=5, rowCount=17,
                                        minimumSize=QSize(300, 350),
                                        verticalHeaderLabels=["00| used", "01| n_cluster", "02| branching_factor",
                                                              "03| threshold",
@@ -709,15 +711,21 @@ class MainWindow(QMainWindow):
                                                              "07| diameter",
                                                              "08| entry_size_limit", "09| diameter_multiplier",
                                                              "10| type_measurement", "11| ccore",
-                                                             "12| n_represent_points", "13| compression", "14| eps"],
-                                       horizontalHeaderLabels=["BIRCH_S", "BIRCH_P", "CURE", "ROCK"])
+                                                             "12| n_represent_points", "13| compression", "14| eps",
+                                                             "15| scale", "16| wavelet"],
+                                       horizontalHeaderLabels=["BIRCH_S", "BIRCH_P", "CURE", "ROCK", "WAVECLUSTER"])
                 tw3_fr3.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
                 tw3_fr3.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
                 addItemOpen = lambda i, j: \
                     (i in [0, 4, 5, 11]) and (tw3_fr3.setCellWidget(i, j, QCheckBox(checked=False))) or \
                     (i in [10]) and ([cb := QComboBox(),
                                       cb.addItems(["Euclidean", "Manhattan", "Inter", "Intra", "Increase"]),
-                                      tw3_fr3.setCellWidget(i, j, cb)]) \
+                                      tw3_fr3.setCellWidget(i, j, cb)]) or \
+                    (i in [16]) and ([
+                        cb := QComboBox(),
+                        cb.addItems(list(WaveCluster.KnownWavelets.keys())),
+                        tw3_fr3.setCellWidget(i, j, cb)
+                    ]) \
                     or [twi := QTableWidgetItem(),
                         twi.setText(DEFAULT_VALUE_TW3[i]),  # Установка значений по умолчанию.
                         tw3_fr3.setItem(i, j, twi)]
@@ -729,10 +737,11 @@ class MainWindow(QMainWindow):
                     {0: True, 1: True, 2: True, 6: True, 7: True, 8: True, 9: True, 10: True, 11: True},
                     # Column 1: BIRCH_P
                     {0: True, 1: True, 11: True, 12: True, 13: True},  # Column 2: CURE
-                    {0: True, 1: True, 3: True, 11: True, 14: True}  # Column 3: ROCK
+                    {0: True, 1: True, 3: True, 11: True, 14: True},  # Column 3: ROCK
+                    {0: True, 3: True, 15: True, 16: True}  # Column 4: WaveCluster
                 ]
                 [switch_case_components[j].get(i, False) and [addItemOpen(i, j)] or [addItemClose(i, j)]
-                 for j in range(4) for i in range(15)]
+                 for j in range(5) for i in range(17)]
                 gl1_fr3.addWidget(tw3_fr3, 1, 0, 1, 2, Qt.AlignmentFlag.AlignCenter)
                 # -----------------------------------------------------------------------------------------------------#
                 # Виджет установки параметров кластеризации изображения
